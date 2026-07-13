@@ -1,0 +1,3 @@
+torch>=2.0
+wandb>=0.16
+matplotlib>=3.5
