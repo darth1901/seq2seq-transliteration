@@ -10,7 +10,7 @@ RNN, attention, and Transformer models for Latin to Devanagari transliteration o
 | Seq2seq + Bahdanau attention (GRU) | **0.3982** |
 | Transformer (built from `nn.MultiheadAttention`) | 0.2239 |
 
-Decomposed by source word length however, attention gains **+10.8 points** over vanilla on words of 12+ characters (0.438 vs 0.330) while gaining only +1.4 on words of 5 characters or fewer. The transformer, constrained by the assignment spec to d_model 64 and one layer per stack, collapses on long words (0.028 at length 16). See the [wandb report](https://wandb.ai/parthd1901-bits-pilani/cs6910-assignment3) for the full analysis.
+Decomposed by source word length however, attention gains **+10.8 points** over vanilla on words of 12+ characters (0.438 vs 0.330) while gaining only +1.4 on words of 5 characters or fewer. The transformer, constrained by the assignment spec to d_model 64 and one layer per stack, collapses on long words (0.028 at length 16). See the wandb report for the full analysis.
 
 ## Layout
 
@@ -121,6 +121,7 @@ viz.plot_attention_grid(model, ex, sv, tv, torch.device("cpu"), save_path="atten
 src, sl = ex[0]
 viz.plot_connectivity(model, src, sl, sv, tv, torch.device("cpu"), save_path="connectivity.png")
 ```
+## [WandB Report](https://wandb.ai/parthd1901-bits-pilani/cs6910-assignment3)
 
 ## Dependencies
 
