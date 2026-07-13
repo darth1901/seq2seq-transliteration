@@ -17,6 +17,7 @@ Decomposed by source word length however, attention gains **+10.8 points** over 
 ```
 cs6910_assignment3/
   seq2seq/
+    __init__.py
     data.py          Aksharantar loading, char vocab, dataset, padded collate
     cells.py         RNN / GRU / LSTM factory (the swappable-cell requirement)
     encoder.py       configurable depth, bidirectionality, dropout
