@@ -1,6 +1,6 @@
 # CS6910 Assignment 3: Sequence-to-Sequence Transliteration
 
-RNN, attention, and Transformer models for Latin to Devanagari transliteration on the Aksharantar dataset (AI4Bharat). Character-level sequence-to-sequence, evaluated by exact-match (whole-word) accuracy on the held-out test set.
+RNN, attention, and Transformer models for Latin to Devanagari transliteration on the Aksharantar dataset (AI4Bharat). Character-level sequence-to-sequence, evaluated by exact-match on the test set.
 
 ## Results
 
@@ -10,7 +10,7 @@ RNN, attention, and Transformer models for Latin to Devanagari transliteration o
 | Seq2seq + Bahdanau attention (GRU) | **0.3982** |
 | Transformer (built from `nn.MultiheadAttention`) | 0.2239 |
 
-The aggregate numbers understate the mechanism. Decomposed by source word length, attention gains **+10.8 points** over vanilla on words of 12+ characters (0.438 vs 0.330) while gaining only +1.4 on words of 5 characters or fewer. The transformer, constrained by the assignment spec to d_model 64 and one layer per stack, collapses on long words (0.028 at length 16). See the wandb report for the full analysis.
+Decomposed by source word length however, attention gains **+10.8 points** over vanilla on words of 12+ characters (0.438 vs 0.330) while gaining only +1.4 on words of 5 characters or fewer. The transformer, constrained by the assignment spec to d_model 64 and one layer per stack, collapses on long words (0.028 at length 16). See the wandb report for the full analysis.
 
 ## Layout
 
@@ -32,8 +32,6 @@ cs6910_assignment3/
   predictions_vanilla/        test-set predictions, vanilla model
   predictions_attention/      test-set predictions, attention model
   predictions_transformers/   test-set predictions, Transformer
-  analysis.py        error analysis and model comparison
-  Q1_derivation.md   parameter and computation derivation
   requirements.txt
 ```
 
@@ -47,19 +45,17 @@ pip install -r requirements.txt
 
 Download and unzip the Aksharantar sampled dataset so the layout is `aksharantar_sampled/<lang>/<lang>_{train,valid,test}.csv`, then point `--data_root` at the parent folder.
 
-The CSV column order (latin,native vs native,latin) is auto-detected per file by testing which column is ASCII, so you do not need to know which way your copy is ordered.
-
 **For Devanagari rendering in the attention heatmaps**, a font covering the script must be installed:
 
 ```bash
-apt-get install -y fonts-noto-core      # Ubuntu / Colab
+apt-get install -y fonts-noto-core      
 ```
 
 Install it **before** matplotlib is first imported. Matplotlib caches its font registry at import time, so a font installed afterwards is often invisible to name-based lookup. `viz.py` loads the font by file path to work around this, but the font must exist on disk.
 
 ## Training
 
-**Vanilla seq2seq** (best configuration):
+**Vanilla seq2seq** (best config):
 
 ```bash
 python -m seq2seq.train --model_type vanilla --data_root aksharantar_sampled --lang hin \
@@ -68,7 +64,7 @@ python -m seq2seq.train --model_type vanilla --data_root aksharantar_sampled --l
   --beam_size 3 --eval_test --save_path vanilla_best.pt --pred_dir predictions_vanilla
 ```
 
-**Attention seq2seq** (best configuration):
+**Attention seq2seq** (best config):
 
 ```bash
 python -m seq2seq.train --model_type attention --data_root aksharantar_sampled --lang hin \
@@ -77,7 +73,7 @@ python -m seq2seq.train --model_type attention --data_root aksharantar_sampled -
   --beam_size 3 --eval_test --save_path attention_best.pt --pred_dir predictions_attention
 ```
 
-**Transformer** (best configuration). The spec fixes d_model 64, d_ff 256, and one layer per stack. Note `--norm_kind layer`: the specified batch normalisation does not train on this task (validation accuracy collapses to ~0.001), because batch norm pools statistics across the time axis and padded positions corrupt them.
+**Transformer** (best config). The spec fixes d_model 64, d_ff 256, and one layer per stack. 
 
 ```bash
 python -m seq2seq.train --model_type transformer --data_root aksharantar_sampled --lang hin \
@@ -124,14 +120,6 @@ viz.plot_attention_grid(model, ex, sv, tv, torch.device("cpu"), save_path="atten
 src, sl = ex[0]
 viz.plot_connectivity(model, src, sl, sv, tv, torch.device("cpu"), save_path="connectivity.png")
 ```
-
-## Design notes
-
-**Decoders run one step at a time** rather than unrolling the sequence in a single RNN call. This is slower, but it is what allows per-step attention weights to be captured for the heatmaps, teacher forcing to be toggled per step, and beam search to drive the same interface.
-
-**The encoder-to-decoder state bridge** folds bidirectional directions by summing, then repeats the top encoder layer across all decoder layers. This is the simplest bridge that is well-defined for every `(enc_layers, dec_layers, bidirectional)` combination in the sweep, which is necessary because encoder and decoder depth are searched independently.
-
-**The Transformer uses only `nn.MultiheadAttention`** plus linear, normalisation, and dropout layers, with a hand-written sinusoidal positional encoding. No `nn.Transformer`, `nn.TransformerEncoder`, `nn.TransformerEncoderLayer`, `nn.TransformerDecoder`, or `nn.TransformerDecoderLayer` is used anywhere.
 
 ## Dependencies
 
